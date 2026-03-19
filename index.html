@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stock Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+:root {
+  --bg: #f8f9fc;
+  --surface: #ffffff;
+  --surface2: #f1f3f8;
+  --border: #e4e7ef;
+  --border2: #d0d5e8;
+  --blue: #2563eb;
+  --blue-light: #eff4ff;
+  --blue-mid: #bfcfff;
+  --green: #16a34a;
+  --green-light: #f0fdf4;
+  --green-mid: #bbf7d0;
+  --red: #dc2626;
+  --red-light: #fff1f1;
+  --red-mid: #fecaca;
+  --amber: #d97706;
+  --amber-light: #fffbeb;
+  --amber-mid: #fde68a;
+  --text: #0f172a;
+  --text2: #475569;
+  --text3: #94a3b8;
+  --shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  --shadow-md: 0 4px 12px rgba(0,0,0,.08), 0 2px 4px rgba(0,0,0,.04);
+  --radius: 12px;
+  --radius-sm: 8px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+/* ── Login screen ── */
+.login-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  transition: opacity .3s ease;
+}
+.login-screen.fade-out {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.login-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  padding: 40px 36px;
+  max-width: 380px;
+  width: 100%;
+  text-align: center;
+}
+
+.login-logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  background: var(--blue-light);
+  border: 1px solid var(--blue-mid);
+  border-radius: 14px;
+  margin-bottom: 20px;
+}
+.login-logo svg { width: 26px; height: 26px; color: var(--blue); }
+
+.login-card h1 {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+.login-card h1 span { color: var(--blue); }
+
+.login-card p {
+  font-size: 13px;
+  color: var(--text3);
+  margin-bottom: 28px;
+  line-height: 1.6;
+}
+
+.gsi-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.auth-error {
+  display: none;
+  background: var(--red-light);
+  border: 1px solid var(--red-mid);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-size: 12px;
+  color: var(--red);
+  margin-top: 12px;
+  text-align: left;
+}
+.auth-error.show { display: block; }
+
+.login-footer {
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 24px;
+  line-height: 1.6;
+}
+
+/* ── Layout ── */
+.wrap { max-width: 1080px; margin: 0 auto; padding: 32px 20px 64px; }
+
+/* ── Header ── */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.header-left h1 {
+  font-size: clamp(20px, 4vw, 28px);
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  color: var(--text);
+}
+.header-left h1 span { color: var(--blue); }
+.header-left p {
+  font-size: 13px;
+  color: var(--text3);
+  margin-top: 2px;
+}
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.header-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--blue-light);
+  border: 1px solid var(--blue-mid);
+  border-radius: 100px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--blue);
+}
+.header-badge svg { width: 14px; height: 14px; }
+
+/* ── User bar ── */
+.user-bar {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  padding: 5px 12px 5px 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text2);
+  box-shadow: var(--shadow);
+}
+.user-bar.show { display: flex; }
+.user-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.signout-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 4px;
+  color: var(--text3);
+  font-size: 11px;
+  font-weight: 600;
+  margin-left: 4px;
+  border-radius: 4px;
+  transition: color .15s, background .15s;
+  line-height: 1;
+}
+.signout-btn:hover { color: var(--red); background: var(--red-light); }
+
+/* ── API input card ── */
+.api-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow);
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.api-card label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text3);
+  white-space: nowrap;
+}
+.api-card input {
+  flex: 1;
+  min-width: 200px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 9px 14px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--text);
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+.api-card input:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(37,99,235,.1);
+}
+.run-btn {
+  background: var(--blue);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 10px 22px;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s, transform .1s, box-shadow .15s;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(37,99,235,.3);
+}
+.run-btn:hover { background: #1d4ed8; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(37,99,235,.35); }
+.run-btn:active { transform: none; }
+.run-btn:disabled { background: var(--text3); box-shadow: none; cursor: not-allowed; transform: none; }
+
+/* ── Agent panels ── */
+.agents-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+@media(max-width:640px) { .agents-row { grid-template-columns: 1fr; } }
+
+.agent-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  transition: box-shadow .2s;
+}
+.agent-card:hover { box-shadow: var(--shadow-md); }
+
+.agent-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface2);
+}
+.dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--border2);
+  flex-shrink: 0;
+  transition: background .3s;
+}
+.dot.running { background: var(--blue); animation: pulse 1.2s infinite; }
+.dot.done    { background: var(--green); }
+.dot.error   { background: var(--red); }
+@keyframes pulse {
+  0%,100% { opacity:1; transform:scale(1); }
+  50%      { opacity:.5; transform:scale(1.5); }
+}
+.agent-meta { flex: 1; }
+.agent-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--text3); }
+.agent-name  { font-size: 14px; font-weight: 600; color: var(--text); margin-top: 1px; }
+.agent-body  {
+  padding: 16px 18px;
+  min-height: 120px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11.5px;
+  line-height: 1.75;
+  color: var(--text3);
+  white-space: pre-wrap;
+}
+.agent-body.live { color: var(--text2); }
+.agent-body.live.cursor::after { content: '▋'; color: var(--blue); animation: blink .7s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+/* ── Status bar ── */
+.status-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px;
+  background: var(--surface2);
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--text3);
+}
+.sdot { width: 6px; height: 6px; border-radius: 50%; background: var(--border2); flex-shrink: 0; }
+.sdot.ok { background: var(--green); }
+.sdot.spin { background: var(--blue); animation: pulse 1s infinite; }
+
+/* ── Portfolio section ── */
+.portfolio-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  margin-bottom: 24px;
+}
+.portfolio-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.portfolio-head h2 { font-size: 15px; font-weight: 600; }
+.pill {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 100px;
+  background: var(--surface2);
+  color: var(--text3);
+  border: 1px solid var(--border);
+}
+.pill.live { background: var(--blue-light); color: var(--blue); border-color: var(--blue-mid); }
+
+/* ── Stock cards ── */
+.stock-list { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+
+.scard {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  display: grid;
+  grid-template-columns: 180px 100px 1fr;
+  gap: 16px;
+  align-items: start;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity .35s, transform .35s, box-shadow .2s;
+}
+.scard.in { opacity: 1; transform: none; }
+.scard:hover { box-shadow: var(--shadow-md); }
+@media(max-width:700px) { .scard { grid-template-columns: 1fr 80px; } .scard .analysis-col { grid-column: 1/-1; } }
+
+.stock-ticker { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600; color: var(--text3); letter-spacing: 1px; text-transform: uppercase; }
+.stock-name   { font-size: 15px; font-weight: 700; color: var(--text); margin-top: 3px; }
+.stock-meta   { font-size: 12px; color: var(--text3); margin-top: 4px; }
+
+.change-col { text-align: center; padding-top: 2px; }
+.change-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text3);
+  line-height: 1.2;
+}
+.change-num.up   { color: var(--green); }
+.change-num.dn   { color: var(--red); }
+.change-num.loading { animation: pulse 1.2s infinite; font-size: 16px; }
+.change-tag { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--text3); margin-top: 3px; }
+
+/* ── Signal badge ── */
+.signal {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  margin-bottom: 8px;
+}
+.signal.buy     { background: var(--green-light);  color: var(--green); border: 1px solid var(--green-mid); }
+.signal.sell    { background: var(--red-light);    color: var(--red);   border: 1px solid var(--red-mid); }
+.signal.hold    { background: var(--amber-light);  color: var(--amber); border: 1px solid var(--amber-mid); }
+.signal.err     { background: var(--red-light);    color: var(--red);   border: 1px solid var(--red-mid); }
+.signal.loading { background: var(--surface2);     color: var(--text3); border: 1px solid var(--border); }
+
+.key-metric {
+  display: inline-block;
+  background: var(--blue-light);
+  color: var(--blue);
+  border: 1px solid var(--blue-mid);
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  margin-left: 6px;
+}
+
+.reason-text {
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--text2);
+  margin-bottom: 10px;
+}
+
+/* ── Sources ── */
+.sources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+.source-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  padding: 3px 10px;
+  font-size: 11px;
+  color: var(--text3);
+  text-decoration: none;
+  transition: background .15s, color .15s;
+}
+.source-chip:hover { background: var(--blue-light); color: var(--blue); border-color: var(--blue-mid); }
+.source-chip svg { width: 10px; height: 10px; flex-shrink: 0; }
+
+/* ── Skeleton ── */
+.skeleton {
+  background: linear-gradient(90deg, var(--border) 25%, var(--surface2) 50%, var(--border) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+  border-radius: 4px;
+  height: 13px;
+  margin: 5px 0;
+}
+@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+/* ── Disclaimer ── */
+.disclaimer {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: var(--amber-light);
+  border: 1px solid var(--amber-mid);
+  border-radius: var(--radius-sm);
+  padding: 12px 16px;
+  font-size: 12px;
+  color: var(--amber);
+  margin-top: 16px;
+}
+.disclaimer svg { width: 16px; height: 16px; flex-shrink: 0; margin-top: 1px; }
+</style>
+</head>
+<body>
+
+<!-- ── Login screen ── -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    </div>
+    <h1>Stock <span>Intelligence</span></h1>
+    <p>Dual-agent portfolio analyzer powered by Claude AI.<br>Sign in with your Google account to continue.</p>
+    <div class="gsi-wrap">
+      <div id="gsiBtn"></div>
+    </div>
+    <div class="auth-error" id="authError"></div>
+    <div class="login-footer">Access is restricted to authorized users only.</div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <h1>Stock <span>Intelligence</span></h1>
+      <p>Dual-agent portfolio analyzer · Powered by Claude AI</p>
+    </div>
+    <div class="header-right">
+      <div class="user-bar" id="userBar">
+        <img class="user-avatar" id="userAvatar" src="" alt="" />
+        <span id="userName"></span>
+        <button class="signout-btn" onclick="signOut()" title="Sign out">Sign out</button>
+      </div>
+      <div class="header-badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+        Live Analysis
+      </div>
+    </div>
+  </div>
+
+  <!-- API key -->
+  <div class="api-card">
+    <label>Anthropic Key</label>
+    <input type="password" id="apiKey" placeholder="sk-ant-api03-..." autocomplete="off" />
+    <button class="run-btn" id="runBtn" onclick="runAgents()">&#9654; Run Analysis</button>
+  </div>
+
+  <!-- Agent panels -->
+  <div class="agents-row">
+    <div class="agent-card">
+      <div class="agent-head">
+        <div class="dot" id="dot1"></div>
+        <div class="agent-meta">
+          <div class="agent-label">Agent 01 · Scanner</div>
+          <div class="agent-name">Daily Change Monitor</div>
+        </div>
+      </div>
+      <div class="agent-body" id="a1log">Waiting to start...</div>
+    </div>
+    <div class="agent-card">
+      <div class="agent-head">
+        <div class="dot" id="dot2"></div>
+        <div class="agent-meta">
+          <div class="agent-label">Agent 02 · Analyst</div>
+          <div class="agent-name">Buy / Sell Advisor</div>
+        </div>
+      </div>
+      <div class="agent-body" id="a2log">Waiting to start...</div>
+    </div>
+  </div>
+
+  <!-- Portfolio -->
+  <div class="portfolio-card">
+    <div class="portfolio-head">
+      <h2>Portfolio Analysis</h2>
+      <span class="pill" id="livePill">12 stocks</span>
+    </div>
+    <div class="stock-list" id="stockList"></div>
+    <div class="status-bar">
+      <div class="sdot" id="sdot"></div>
+      <span id="statusTxt">Enter your API key and click Run Analysis</span>
+    </div>
+  </div>
+
+  <div class="disclaimer">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    <span><strong>Not financial advice.</strong> This tool uses AI analysis based on publicly available information. Always consult a qualified financial advisor before making investment decisions.</span>
+  </div>
+
+</div>
+
+<script>
+// ── Auth configuration ────────────────────────────────────────────────────────
+// 1. Replace with your OAuth 2.0 Client ID from console.cloud.google.com
+// 2. Add your email address(es) to ALLOWED_EMAILS
+const GOOGLE_CLIENT_ID = '413838175037-ludkg9vjrhogv9r68n2gmplelfk2ktkh.apps.googleusercontent.com';
+const ALLOWED_EMAILS   = ['gorgan.josef@gmail.com'];
+
+var currentUser = null;
+
+function initAuth() {
+  if (typeof google === 'undefined' || !google.accounts) {
+    // GIS script hasn't loaded yet — retry shortly
+    setTimeout(initAuth, 200);
+    return;
+  }
+  google.accounts.id.initialize({
+    client_id: GOOGLE_CLIENT_ID,
+    callback: handleCredential,
+    auto_select: true,
+  });
+  google.accounts.id.renderButton(document.getElementById('gsiBtn'), {
+    theme: 'outline',
+    size: 'large',
+    text: 'sign_in_with',
+    shape: 'pill',
+    logo_alignment: 'left',
+  });
+  google.accounts.id.prompt();
+}
+
+function handleCredential(response) {
+  var parts = response.credential.split('.');
+  var payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+
+  if (!ALLOWED_EMAILS.includes(payload.email)) {
+    showAuthError('Access restricted. ' + payload.email + ' is not on the allowed list.');
+    google.accounts.id.disableAutoSelect();
+    return;
+  }
+
+  currentUser = { name: payload.given_name || payload.name, email: payload.email, picture: payload.picture };
+  showApp();
+}
+
+function showApp() {
+  var ls = document.getElementById('loginScreen');
+  ls.classList.add('fade-out');
+  setTimeout(function() { ls.style.display = 'none'; }, 300);
+
+  var bar = document.getElementById('userBar');
+  bar.classList.add('show');
+  document.getElementById('userAvatar').src = currentUser.picture || '';
+  document.getElementById('userName').textContent = currentUser.name;
+  document.getElementById('authError').classList.remove('show');
+}
+
+function showAuthError(msg) {
+  var el = document.getElementById('authError');
+  el.textContent = msg;
+  el.classList.add('show');
+}
+
+function signOut() {
+  if (typeof google !== 'undefined' && google.accounts) {
+    google.accounts.id.disableAutoSelect();
+  }
+  currentUser = null;
+  document.getElementById('userBar').classList.remove('show');
+  document.getElementById('userAvatar').src = '';
+  document.getElementById('userName').textContent = '';
+  var ls = document.getElementById('loginScreen');
+  ls.style.display = 'flex';
+  ls.classList.remove('fade-out');
+}
+
+window.addEventListener('load', initAuth);
+
+// ── Portfolio data ────────────────────────────────────────────────────────────
+const PORTFOLIO = [
+  { name:"NVIDIA",             ticker:"NVDA",  shares:31.71, price:181.56, value_czk:121087.85 },
+  { name:"Netflix",            ticker:"NFLX",  shares:24.47, price:98.83,  value_czk:50873.25  },
+  { name:"Alphabet (Class A)", ticker:"GOOGL", shares:5.05,  price:299,    value_czk:31803.48  },
+  { name:"Spotify",            ticker:"SPOT",  shares:2.53,  price:549.75, value_czk:29319.97  },
+  { name:"Amazon",             ticker:"AMZN",  shares:3.84,  price:217.75, value_czk:17613.77  },
+  { name:"Salesforce",         ticker:"CRM",   shares:3.36,  price:202,    value_czk:14283.35  },
+  { name:"Apple",              ticker:"AAPL",  shares:2.51,  price:259.22, value_czk:13683.00  },
+  { name:"Coca-Cola",          ticker:"KO",    shares:5.59,  price:77.18,  value_czk:9075.87   },
+  { name:"Taiwan Semi",        ticker:"TSM",   shares:1.18,  price:352.25, value_czk:8777.97   },
+  { name:"Roku",               ticker:"ROKU",  shares:2.54,  price:98.18,  value_czk:5261.87   },
+  { name:"Tesla",              ticker:"TSLA",  shares:0.5,   price:404.19, value_czk:4264.51   },
+  { name:"Strategy (MSTR)",    ticker:"MSTR",  shares:1.31,  price:139.50, value_czk:3864.73   },
+];
+
+// Sources per ticker — curated financial data sources
+const SOURCES = {
+  NVDA:  [{n:"NVIDIA IR",       u:"https://investor.nvidia.com"},      {n:"Yahoo Finance", u:"https://finance.yahoo.com/quote/NVDA"},  {n:"Seeking Alpha", u:"https://seekingalpha.com/symbol/NVDA"}],
+  NFLX:  [{n:"Netflix IR",      u:"https://ir.netflix.net"},           {n:"Yahoo Finance", u:"https://finance.yahoo.com/quote/NFLX"},  {n:"Seeking Alpha", u:"https://seekingalpha.com/symbol/NFLX"}],
+  GOOGL: [{n:"Alphabet IR",     u:"https://abc.xyz/investor"},         {n:"Yahoo Finance", u:"https://finance.yahoo.com/quote/GOOGL"}, {n:"Seeking Alpha", u:"https://seekingalpha.com/symbol/GOOGL"}],
+  SPOT:  [{n:"Spotify IR",      u:"https://investors.spotify.com"},    {n:"Yahoo Finance", u:"https://finance.yahoo.com/quote/SPOT"},  {n:"Seeking Alpha", u:"https://seekingalpha.com/symbol/SPOT"}],
+  AMZN:  [{n:"Amazon IR",       u:"https://ir.aboutamazon.com"},       {n:"Yahoo Finance", u:"https://finance.yahoo.com/quote/AMZN"},  {n:"Seeking Alpha", u:"https://seekingalpha.com/symbol/AMZN"}],
+  CRM:   [{n:"Salesforce IR",   u:"https://investor.salesforce.com"},  {n:"Yahoo Finance", u:"https://finance.yahoo.com/quote/CRM"},   {n:"Seeking Alpha", u:"https://seekingalpha.com/symbol/CRM"}],
+  AAPL:  [{n:"Apple IR",        u:"https://investor.apple.com"},       {n:"Yahoo Finance", u:"https://finance.yahoo.com/quote/AAPL"},  {n:"Seeking Alpha", u:"https://seekingalpha.com/symbol/AAPL"}],
+  KO:    [{n:"Coca-Cola IR",    u:"https://investors.coca-colacompany.com"}, {n:"Yahoo Finance", u:"https://finance.yahoo.com/quote/KO"}, {n:"Seeking Alpha", u:"https://seekingalpha.com/symbol/KO"}],
+  TSM:   [{n:"TSMC IR",         u:"https://investor.tsmc.com"},        {n:"Yahoo Finance", u:"https://finance.yahoo.com/quote/TSM"},   {n:"Seeking Alpha", u:"https://seekingalpha.com/symbol/TSM"}],
+  ROKU:  [{n:"Roku IR",         u:"https://ir.roku.com"},              {n:"Yahoo Finance", u:"https://finance.yahoo.com/quote/ROKU"},  {n:"Seeking Alpha", u:"https://seekingalpha.com/symbol/ROKU"}],
+  TSLA:  [{n:"Tesla IR",        u:"https://ir.tesla.com"},             {n:"Yahoo Finance", u:"https://finance.yahoo.com/quote/TSLA"},  {n:"Seeking Alpha", u:"https://seekingalpha.com/symbol/TSLA"}],
+  MSTR:  [{n:"Strategy IR",     u:"https://www.strategy.com/investors"},{n:"Yahoo Finance", u:"https://finance.yahoo.com/quote/MSTR"}, {n:"Seeking Alpha", u:"https://seekingalpha.com/symbol/MSTR"}],
+};
+
+const SVG_LINK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>';
+
+function setLog(id, msg, live) {
+  var el = document.getElementById(id);
+  el.textContent = msg;
+  el.className = 'agent-body' + (live ? ' live cursor' : ' live');
+}
+function setDot(id, s) { document.getElementById(id).className = 'dot ' + s; }
+function setStatus(msg, working) {
+  document.getElementById('statusTxt').textContent = msg;
+  document.getElementById('sdot').className = 'sdot ' + (working ? 'spin' : 'ok');
+}
+
+function buildSkeletons() {
+  var html = '';
+  for (var i = 0; i < PORTFOLIO.length; i++) {
+    var s = PORTFOLIO[i];
+    html += '<div class="scard" id="sc-' + i + '">'
+      + '<div>'
+        + '<div class="stock-ticker">' + s.ticker + '</div>'
+        + '<div class="stock-name">' + s.name + '</div>'
+        + '<div class="stock-meta">$' + s.price + ' &middot; ' + s.shares + ' sh</div>'
+      + '</div>'
+      + '<div class="change-col">'
+        + '<div class="change-num loading" id="dp-' + i + '">—</div>'
+        + '<div class="change-tag">Today</div>'
+      + '</div>'
+      + '<div class="analysis-col" id="an-' + i + '">'
+        + '<span class="signal loading">Pending...</span>'
+        + '<div><div class="skeleton" style="width:92%"></div><div class="skeleton" style="width:78%"></div><div class="skeleton" style="width:85%"></div></div>'
+      + '</div>'
+    + '</div>';
+  }
+  document.getElementById('stockList').innerHTML = html;
+  for (var j = 0; j < PORTFOLIO.length; j++) {
+    (function(k){ setTimeout(function(){ var c=document.getElementById('sc-'+k); if(c) c.classList.add('in'); }, k*55); })(j);
+  }
+}
+
+async function callClaude(apiKey, prompt) {
+  var retries = 3;
+  for (var attempt = 0; attempt <= retries; attempt++) {
+    try {
+      var fp = fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": apiKey,
+          "anthropic-version": "2023-06-01",
+          "anthropic-dangerous-direct-browser-access": "true"
+        },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 900,
+          messages: [{ role: "user", content: prompt }]
+        })
+      });
+      var tp = new Promise(function(_, r){ setTimeout(function(){ r(new Error('timeout')); }, 45000); });
+      var res = await Promise.race([fp, tp]);
+      if (res.status === 429) {
+        await new Promise(function(r){ setTimeout(r, 4000*(attempt+1)); });
+        continue;
+      }
+      if (!res.ok) {
+        var ed = await res.json().catch(function(){ return {}; });
+        throw new Error(ed.error ? ed.error.message : 'HTTP ' + res.status);
+      }
+      var d = await res.json();
+      var txt = '';
+      for (var i = 0; i < d.content.length; i++) {
+        if (d.content[i].type === 'text') { txt = d.content[i].text; break; }
+      }
+      if (!txt) throw new Error('Empty response');
+      return txt;
+    } catch(e) {
+      if (attempt === retries) throw e;
+      await new Promise(function(r){ setTimeout(r, 2000); });
+    }
+  }
+  throw new Error('Rate limit — all retries exhausted');
+}
+
+function parseJSON(raw) {
+  var clean = raw.replace(/```json|```/g, '').trim();
+  var m = clean.match(/\{[\s\S]*\}/);
+  return JSON.parse(m ? m[0] : clean);
+}
+
+function updateCard(i, result) {
+  var el = document.getElementById('an-' + i);
+  if (!el) return;
+  var sig = (result.signal || 'hold').toLowerCase().replace('err','err');
+  var sigLabel = result.signal || 'N/A';
+  var conf = result.confidence || '';
+  var metric = result.keyMetric ? '<span class="key-metric">' + result.keyMetric + '</span>' : '';
+  var sources = SOURCES[PORTFOLIO[i].ticker] || [];
+  var chips = sources.map(function(s){
+    return '<a class="source-chip" href="' + s.u + '" target="_blank" rel="noopener">' + SVG_LINK + s.n + '</a>';
+  }).join('');
+  el.innerHTML =
+    '<div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-bottom:8px">'
+      + '<span class="signal ' + sig + '">' + sigLabel + (conf ? ' · ' + conf : '') + '</span>'
+      + metric
+    + '</div>'
+    + '<div class="reason-text">' + (result.reason || '') + '</div>'
+    + (chips ? '<div class="sources">' + chips + '</div>' : '');
+}
+
+async function fetchPrices(apiKey) {
+  setStatus('Fetching today\'s prices...', true);
+  var tickers = PORTFOLIO.map(function(s){ return s.ticker; }).join(', ');
+  var prompt = 'Give current stock prices and today\'s daily % change for: ' + tickers
+    + '. Use your most recent market knowledge.'
+    + ' Reply ONLY with this JSON, no markdown:'
+    + ' {"quotes":[{"ticker":"NVDA","price":181.56,"dailyPct":-1.23}]}'
+    + ' Include all ' + PORTFOLIO.length + ' tickers. Positive dailyPct = up today.';
+  try {
+    var raw = await callClaude(apiKey, prompt);
+    var parsed = parseJSON(raw);
+    var map = {};
+    (parsed.quotes || []).forEach(function(q){ map[q.ticker] = q; });
+    var ok = 0;
+    PORTFOLIO.forEach(function(stock, i) {
+      var q = map[stock.ticker];
+      var el = document.getElementById('dp-' + i);
+      if (!el) return;
+      if (q && typeof q.dailyPct === 'number') {
+        ok++;
+        var sign = q.dailyPct >= 0 ? '+' : '';
+        el.textContent = sign + q.dailyPct.toFixed(2) + '%';
+        el.className = 'change-num ' + (q.dailyPct >= 0 ? 'up' : 'dn');
+        PORTFOLIO[i].livePrice = q.price ? Number(q.price).toFixed(2) : stock.price;
+        PORTFOLIO[i].dailyChange = q.dailyPct.toFixed(2);
+      } else {
+        el.textContent = '—';
+        el.className = 'change-num';
+        PORTFOLIO[i].dailyChange = 'unknown';
+      }
+    });
+    setStatus('Prices loaded for ' + ok + '/' + PORTFOLIO.length + ' stocks', false);
+  } catch(e) {
+    setStatus('Price fetch skipped: ' + e.message.slice(0,60), false);
+    PORTFOLIO.forEach(function(s, i) {
+      var el = document.getElementById('dp-' + i);
+      if (el) { el.textContent = '—'; el.className = 'change-num'; }
+      PORTFOLIO[i].dailyChange = 'unknown';
+    });
+  }
+}
+
+async function runAgents() {
+  if (!currentUser) { alert('Please sign in first.'); return; }
+
+  var apiKey = document.getElementById('apiKey').value.trim();
+  if (!apiKey) { alert('Please enter your Anthropic API key.'); return; }
+
+  var btn = document.getElementById('runBtn');
+  btn.disabled = true; btn.textContent = 'Running...';
+
+  buildSkeletons();
+  document.getElementById('livePill').textContent = '...';
+  document.getElementById('livePill').className = 'pill live';
+
+  // ── Price fetch ──────────────────────────────────────────────
+  await fetchPrices(apiKey);
+
+  // ── Agent 1: Scanner ─────────────────────────────────────────
+  setDot('dot1', 'running');
+  setLog('a1log', 'Scanning portfolio...', true);
+  setStatus('Agent 1: scanning portfolio...', true);
+
+  var scanPrompt = 'You are a portfolio scanner. Data: ' + JSON.stringify(PORTFOLIO)
+    + ' Find top 3 and bottom 3 performers by dailyChange, flag high_risk (dailyChange <= -3),'
+    + ' sum total_czk. JSON only no markdown:'
+    + ' {"top3":[{"ticker":"","change":0}],"bottom3":[{"ticker":"","change":0}],"high_risk":[],"total_czk":0,"summary":"one sentence"}';
+
+  try {
+    var raw1 = await callClaude(apiKey, scanPrompt);
+    var scan = parseJSON(raw1);
+    setDot('dot1', 'done');
+    var top = (scan.top3||[]).map(function(s){ return s.ticker; }).join(', ') || '—';
+    var risk = (scan.high_risk||[]).join(', ') || 'None';
+    var total = (scan.total_czk||0).toLocaleString('cs-CZ');
+    setLog('a1log',
+      'Scan complete!\n\n'
+      + 'Top movers:  ' + top + '\n'
+      + 'High risk:   ' + risk + '\n'
+      + 'Portfolio:   ' + total + ' Kč\n\n'
+      + (scan.summary||''), false);
+  } catch(e) {
+    setDot('dot1', 'error');
+    setLog('a1log', 'Error: ' + e.message, false);
+    btn.disabled = false; btn.textContent = 'Run Analysis'; return;
+  }
+
+  // ── Agent 2: Sequential analyst ──────────────────────────────
+  setDot('dot2', 'running');
+  setLog('a2log', 'Starting analysis of ' + PORTFOLIO.length + ' stocks...', true);
+  setStatus('Agent 2: analyzing stocks one by one...', true);
+
+  var results = [];
+
+  for (var i = 0; i < PORTFOLIO.length; i++) {
+    var stock = PORTFOLIO[i];
+    var daily = (stock.dailyChange && stock.dailyChange !== 'unknown') ? stock.dailyChange + '%' : 'unavailable';
+    var price = stock.livePrice || stock.price;
+
+    // Show in-progress on this card
+    var anEl = document.getElementById('an-' + i);
+    if (anEl) {
+      anEl.innerHTML = '<span class="signal loading">Analyzing ' + stock.ticker + '...</span>'
+        + '<div><div class="skeleton" style="width:90%"></div>'
+        + '<div class="skeleton" style="width:75%"></div>'
+        + '<div class="skeleton" style="width:82%"></div></div>';
+    }
+
+    setLog('a2log',
+      '[' + (i+1) + '/' + PORTFOLIO.length + '] Analyzing ' + stock.ticker + ' — ' + stock.name + '\n\n'
+      + 'Completed: ' + results.map(function(r){ return r.ticker + ' ' + r.signal; }).join('  ·  '),
+    true);
+
+    var p = 'You are a sharp equity analyst advising a retail investor.'
+      + ' Give a decisive BUY, HOLD or SELL — do not default to HOLD.'
+      + '\n\nStock: ' + stock.ticker + ' (' + stock.name + ')'
+      + '\nPrice: $' + price + '  |  Today: ' + daily + '  |  Shares: ' + stock.shares
+      + '\n\nWrite 3-4 sentences in "reason" covering:'
+      + '\n1. What today\'s price move signals (momentum or warning)'
+      + '\n2. Key fundamentals: revenue growth, margins, P/E ratio'
+      + '\n3. Recent catalysts: earnings, product news, macro headwinds'
+      + '\n4. Valuation vs 52-week range — cheap or stretched?'
+      + '\nBUY=strong+good entry. SELL=weak/overvalued. HOLD=genuinely mixed.'
+      + '\nJSON only no markdown: {"signal":"BUY","reason":"...","confidence":"HIGH","keyMetric":"e.g. P/E 32x fwd"}';
+
+    var result;
+    try {
+      var raw2 = await callClaude(apiKey, p);
+      var parsed = parseJSON(raw2);
+      result = { index: i, ticker: stock.ticker, signal: parsed.signal, reason: parsed.reason, confidence: parsed.confidence, keyMetric: parsed.keyMetric };
+    } catch(e2) {
+      result = { index: i, ticker: stock.ticker, signal: 'ERR', reason: 'Analysis failed: ' + e2.message.slice(0,100), confidence: 'LOW', keyMetric: '' };
+    }
+
+    results.push(result);
+    updateCard(i, result);
+
+    if (i < PORTFOLIO.length - 1) {
+      await new Promise(function(done){ setTimeout(done, 700); });
+    }
+  }
+
+  // Done
+  setDot('dot2', 'done');
+  var buys  = results.filter(function(r){ return r.signal === 'BUY';  }).length;
+  var sells = results.filter(function(r){ return r.signal === 'SELL'; }).length;
+  var holds = results.filter(function(r){ return r.signal === 'HOLD'; }).length;
+  setLog('a2log',
+    'Analysis complete!\n\n'
+    + '  BUY    ' + buys  + ' stocks\n'
+    + '  HOLD   ' + holds + ' stocks\n'
+    + '  SELL   ' + sells + ' stocks\n\n'
+    + 'All ' + PORTFOLIO.length + ' stocks analyzed.', false);
+  document.getElementById('livePill').textContent = PORTFOLIO.length + ' stocks · done';
+  setStatus('Complete: ' + buys + ' BUY · ' + holds + ' HOLD · ' + sells + ' SELL', false);
+  btn.disabled = false; btn.textContent = '↻ Run Again';
+}
+</script>
+</body>
+</html>

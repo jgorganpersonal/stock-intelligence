@@ -1,0 +1,16 @@
+# Playwright MCP artifacts
+.playwright-mcp/
+
+# macOS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+
+# Local env / secrets
+.env
+.env.local
+
+# Claude local settings
+.claude/settings.local.json
