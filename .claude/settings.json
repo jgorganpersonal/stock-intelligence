@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wrangler secret:*)",
+      "Bash(openssl rand:*)",
+      "Bash(wrangler deploy:*)"
+    ]
+  }
+}

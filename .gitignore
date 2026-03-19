@@ -1,6 +1,9 @@
 # Playwright MCP artifacts
 .playwright-mcp/
 
+# Wrangler cache
+worker/.wrangler/
+
 # macOS
 .DS_Store
 

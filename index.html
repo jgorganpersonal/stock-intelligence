@@ -532,10 +532,8 @@ body {
     </div>
   </div>
 
-  <!-- API key -->
+  <!-- Run button -->
   <div class="api-card">
-    <label>Anthropic Key</label>
-    <input type="password" id="apiKey" placeholder="sk-ant-api03-..." autocomplete="off" />
     <button class="run-btn" id="runBtn" onclick="runAgents()">&#9654; Run Analysis</button>
   </div>
 
@@ -584,17 +582,15 @@ body {
 </div>
 
 <script>
-// ── Auth configuration ────────────────────────────────────────────────────────
-// 1. Replace with your OAuth 2.0 Client ID from console.cloud.google.com
-// 2. Add your email address(es) to ALLOWED_EMAILS
+// ── Configuration ─────────────────────────────────────────────────────────────
 const GOOGLE_CLIENT_ID = '413838175037-ludkg9vjrhogv9r68n2gmplelfk2ktkh.apps.googleusercontent.com';
-const ALLOWED_EMAILS   = ['gorgan.josef@gmail.com'];
+const WORKER_URL       = 'https://stock-intelligence.gorgan-josef.workers.dev';
 
-var currentUser = null;
+var currentUser    = null;
+var sessionToken   = null;
 
 function initAuth() {
   if (typeof google === 'undefined' || !google.accounts) {
-    // GIS script hasn't loaded yet — retry shortly
     setTimeout(initAuth, 200);
     return;
   }
@@ -613,18 +609,25 @@ function initAuth() {
   google.accounts.id.prompt();
 }
 
-function handleCredential(response) {
-  var parts = response.credential.split('.');
-  var payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
-
-  if (!ALLOWED_EMAILS.includes(payload.email)) {
-    showAuthError('Access restricted. ' + payload.email + ' is not on the allowed list.');
-    google.accounts.id.disableAutoSelect();
-    return;
+async function handleCredential(response) {
+  try {
+    var res = await fetch(WORKER_URL + '/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: response.credential }),
+    });
+    var data = await res.json();
+    if (!res.ok) {
+      showAuthError(data.error || 'Authentication failed.');
+      google.accounts.id.disableAutoSelect();
+      return;
+    }
+    sessionToken = data.session;
+    currentUser  = { name: data.name, email: data.email, picture: data.picture };
+    showApp();
+  } catch (e) {
+    showAuthError('Could not reach auth server. Try again.');
   }
-
-  currentUser = { name: payload.given_name || payload.name, email: payload.email, picture: payload.picture };
-  showApp();
 }
 
 function showApp() {
@@ -649,7 +652,8 @@ function signOut() {
   if (typeof google !== 'undefined' && google.accounts) {
     google.accounts.id.disableAutoSelect();
   }
-  currentUser = null;
+  currentUser  = null;
+  sessionToken = null;
   document.getElementById('userBar').classList.remove('show');
   document.getElementById('userAvatar').src = '';
   document.getElementById('userName').textContent = '';
@@ -735,13 +739,11 @@ async function callClaude(apiKey, prompt) {
   var retries = 3;
   for (var attempt = 0; attempt <= retries; attempt++) {
     try {
-      var fp = fetch("https://api.anthropic.com/v1/messages", {
+      var fp = fetch(WORKER_URL + "/analyze", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-api-key": apiKey,
-          "anthropic-version": "2023-06-01",
-          "anthropic-dangerous-direct-browser-access": "true"
+          "Authorization": "Bearer " + sessionToken,
         },
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514",
@@ -800,7 +802,7 @@ function updateCard(i, result) {
     + (chips ? '<div class="sources">' + chips + '</div>' : '');
 }
 
-async function fetchPrices(apiKey) {
+async function fetchPrices() {
   setStatus('Fetching today\'s prices...', true);
   var tickers = PORTFOLIO.map(function(s){ return s.ticker; }).join(', ');
   var prompt = 'Give current stock prices and today\'s daily % change for: ' + tickers
@@ -809,7 +811,7 @@ async function fetchPrices(apiKey) {
     + ' {"quotes":[{"ticker":"NVDA","price":181.56,"dailyPct":-1.23}]}'
     + ' Include all ' + PORTFOLIO.length + ' tickers. Positive dailyPct = up today.';
   try {
-    var raw = await callClaude(apiKey, prompt);
+    var raw = await callClaude(null, prompt);
     var parsed = parseJSON(raw);
     var map = {};
     (parsed.quotes || []).forEach(function(q){ map[q.ticker] = q; });
@@ -843,10 +845,7 @@ async function fetchPrices(apiKey) {
 }
 
 async function runAgents() {
-  if (!currentUser) { alert('Please sign in first.'); return; }
-
-  var apiKey = document.getElementById('apiKey').value.trim();
-  if (!apiKey) { alert('Please enter your Anthropic API key.'); return; }
+  if (!currentUser || !sessionToken) { alert('Please sign in first.'); return; }
 
   var btn = document.getElementById('runBtn');
   btn.disabled = true; btn.textContent = 'Running...';
@@ -856,7 +855,7 @@ async function runAgents() {
   document.getElementById('livePill').className = 'pill live';
 
   // ── Price fetch ──────────────────────────────────────────────
-  await fetchPrices(apiKey);
+  await fetchPrices();
 
   // ── Agent 1: Scanner ─────────────────────────────────────────
   setDot('dot1', 'running');
@@ -869,7 +868,7 @@ async function runAgents() {
     + ' {"top3":[{"ticker":"","change":0}],"bottom3":[{"ticker":"","change":0}],"high_risk":[],"total_czk":0,"summary":"one sentence"}';
 
   try {
-    var raw1 = await callClaude(apiKey, scanPrompt);
+    var raw1 = await callClaude(null, scanPrompt);
     var scan = parseJSON(raw1);
     setDot('dot1', 'done');
     var top = (scan.top3||[]).map(function(s){ return s.ticker; }).join(', ') || '—';
@@ -927,7 +926,7 @@ async function runAgents() {
 
     var result;
     try {
-      var raw2 = await callClaude(apiKey, p);
+      var raw2 = await callClaude(null, p);
       var parsed = parseJSON(raw2);
       result = { index: i, ticker: stock.ticker, signal: parsed.signal, reason: parsed.reason, confidence: parsed.confidence, keyMetric: parsed.keyMetric };
     } catch(e2) {
