@@ -3,7 +3,9 @@
     "allow": [
       "Bash(wrangler secret:*)",
       "Bash(openssl rand:*)",
-      "Bash(wrangler deploy:*)"
+      "Bash(wrangler deploy:*)",
+      "Bash(gh api:*)",
+      "Bash(python3 -m json.tool)"
     ]
   }
 }
