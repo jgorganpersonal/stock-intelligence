@@ -5,7 +5,8 @@
       "Bash(openssl rand:*)",
       "Bash(wrangler deploy:*)",
       "Bash(gh api:*)",
-      "Bash(python3 -m json.tool)"
+      "Bash(python3 -m json.tool)",
+      "Bash(git push:*)"
     ]
   }
 }
