@@ -666,18 +666,19 @@ window.addEventListener('load', initAuth);
 
 // ── Portfolio data ────────────────────────────────────────────────────────────
 const PORTFOLIO = [
-  { name:"NVIDIA",             ticker:"NVDA",  shares:31.71, price:181.56, value_czk:121087.85 },
-  { name:"Netflix",            ticker:"NFLX",  shares:24.47, price:98.83,  value_czk:50873.25  },
-  { name:"Alphabet (Class A)", ticker:"GOOGL", shares:5.05,  price:299,    value_czk:31803.48  },
-  { name:"Spotify",            ticker:"SPOT",  shares:2.53,  price:549.75, value_czk:29319.97  },
-  { name:"Amazon",             ticker:"AMZN",  shares:3.84,  price:217.75, value_czk:17613.77  },
-  { name:"Salesforce",         ticker:"CRM",   shares:3.36,  price:202,    value_czk:14283.35  },
-  { name:"Apple",              ticker:"AAPL",  shares:2.51,  price:259.22, value_czk:13683.00  },
-  { name:"Coca-Cola",          ticker:"KO",    shares:5.59,  price:77.18,  value_czk:9075.87   },
-  { name:"Taiwan Semi",        ticker:"TSM",   shares:1.18,  price:352.25, value_czk:8777.97   },
-  { name:"Roku",               ticker:"ROKU",  shares:2.54,  price:98.18,  value_czk:5261.87   },
-  { name:"Tesla",              ticker:"TSLA",  shares:0.5,   price:404.19, value_czk:4264.51   },
-  { name:"Strategy (MSTR)",    ticker:"MSTR",  shares:1.31,  price:139.50, value_czk:3864.73   },
+  { name:"NVIDIA",             ticker:"NVDA",  shares:31.98, price:174.39, value_czk:118277.96 },
+  { name:"Netflix",            ticker:"NFLX",  shares:24.47, price:92.79,  value_czk:48169.14  },
+  { name:"Alphabet (Class A)", ticker:"GOOGL", shares:5.27,  price:284.72, value_czk:31875.43  },
+  { name:"Spotify",            ticker:"SPOT",  shares:2.53,  price:476.37, value_czk:25621.81  },
+  { name:"Amazon",             ticker:"AMZN",  shares:4.17,  price:210.70, value_czk:18636.94  },
+  { name:"Apple",              ticker:"AAPL",  shares:2.51,  price:256.21, value_czk:13638.79  },
+  { name:"Salesforce",         ticker:"CRM",   shares:3.36,  price:184.34, value_czk:13145.14  },
+  { name:"Taiwan Semiconductor", ticker:"TSM", shares:1.41,  price:334.29, value_czk:10022.99  },
+  { name:"Gold",               ticker:"XAUUSD",shares:0.1067,price:3085,   value_czk:9891.56   },
+  { name:"Coca-Cola",          ticker:"KO",    shares:5.59,  price:75.27,  value_czk:8926.32   },
+  { name:"Roku",               ticker:"ROKU",  shares:2.54,  price:92.92,  value_czk:5022.03   },
+  { name:"Tesla",              ticker:"TSLA",  shares:0.5,   price:378.85, value_czk:4030.92   },
+  { name:"Microsoft",          ticker:"MSFT",  shares:0.24,  price:367.56, value_czk:1942.76   },
 ];
 
 // Sources per ticker — curated financial data sources
@@ -691,9 +692,10 @@ const SOURCES = {
   AAPL:  [{n:"Apple IR",        u:"https://investor.apple.com"},       {n:"Yahoo Finance", u:"https://finance.yahoo.com/quote/AAPL"},  {n:"Seeking Alpha", u:"https://seekingalpha.com/symbol/AAPL"}],
   KO:    [{n:"Coca-Cola IR",    u:"https://investors.coca-colacompany.com"}, {n:"Yahoo Finance", u:"https://finance.yahoo.com/quote/KO"}, {n:"Seeking Alpha", u:"https://seekingalpha.com/symbol/KO"}],
   TSM:   [{n:"TSMC IR",         u:"https://investor.tsmc.com"},        {n:"Yahoo Finance", u:"https://finance.yahoo.com/quote/TSM"},   {n:"Seeking Alpha", u:"https://seekingalpha.com/symbol/TSM"}],
-  ROKU:  [{n:"Roku IR",         u:"https://ir.roku.com"},              {n:"Yahoo Finance", u:"https://finance.yahoo.com/quote/ROKU"},  {n:"Seeking Alpha", u:"https://seekingalpha.com/symbol/ROKU"}],
-  TSLA:  [{n:"Tesla IR",        u:"https://ir.tesla.com"},             {n:"Yahoo Finance", u:"https://finance.yahoo.com/quote/TSLA"},  {n:"Seeking Alpha", u:"https://seekingalpha.com/symbol/TSLA"}],
-  MSTR:  [{n:"Strategy IR",     u:"https://www.strategy.com/investors"},{n:"Yahoo Finance", u:"https://finance.yahoo.com/quote/MSTR"}, {n:"Seeking Alpha", u:"https://seekingalpha.com/symbol/MSTR"}],
+  ROKU:   [{n:"Roku IR",        u:"https://ir.roku.com"},              {n:"Yahoo Finance", u:"https://finance.yahoo.com/quote/ROKU"},   {n:"Seeking Alpha", u:"https://seekingalpha.com/symbol/ROKU"}],
+  TSLA:   [{n:"Tesla IR",       u:"https://ir.tesla.com"},             {n:"Yahoo Finance", u:"https://finance.yahoo.com/quote/TSLA"},   {n:"Seeking Alpha", u:"https://seekingalpha.com/symbol/TSLA"}],
+  XAUUSD: [{n:"Gold Spot",      u:"https://finance.yahoo.com/quote/GC%3DF"}, {n:"Kitco",  u:"https://www.kitco.com/gold-price-today-usa.html"}, {n:"BullionVault", u:"https://www.bullionvault.com/gold-price-chart.do"}],
+  MSFT:   [{n:"Microsoft IR",   u:"https://www.microsoft.com/en-us/investor"},{n:"Yahoo Finance", u:"https://finance.yahoo.com/quote/MSFT"}, {n:"Seeking Alpha", u:"https://seekingalpha.com/symbol/MSFT"}],
 };
 
 const SVG_LINK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>';
